@@ -647,7 +647,9 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 
 	var categoryIDs []int
 	if v, ok := categoriesbufMapByParentID[rootCategory.ID]; ok {
-		categoryIDs = v
+		for _, c := range v {
+			categoryIDs = append(categoryIDs, c.ID)
+		}
 	} else {
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
 		return
