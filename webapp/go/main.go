@@ -65,6 +65,10 @@ var (
 	templates *template.Template
 	dbx       *sqlx.DB
 	store     sessions.Store
+
+	categoriesbuf []Category
+	categorybufMap map[int]Category
+	categoriesbufMapByParentID map[int][]Category
 )
 
 type Config struct {
@@ -412,14 +416,25 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 }
 
 func getCategoryByID(q sqlx.Queryer, categoryID int) (category Category, err error) {
-	err = sqlx.Get(q, &category, "SELECT * FROM `categories` WHERE `id` = ?", categoryID)
-	if category.ParentID != 0 {
-		parentCategory, err := getCategoryByID(q, category.ParentID)
-		if err != nil {
-			return category, err
+	if v, ok := categorybufMap[categoryID]; ok {
+		category = v
+		if category.ParentID != 0 {
+			parentCategory, err := getCategoryByID(q, category.ParentID)
+			if err != nil {
+				return category, err
+			}
+			category.ParentCategoryName = parentCategory.CategoryName
 		}
-		category.ParentCategoryName = parentCategory.CategoryName
 	}
+
+	// err = sqlx.Get(q, &category, "SELECT * FROM `categories` WHERE `id` = ?", categoryID)
+	// if category.ParentID != 0 {
+	// 	parentCategory, err := getCategoryByID(q, category.ParentID)
+	// 	if err != nil {
+	// 		return category, err
+	// 	}
+	// 	category.ParentCategoryName = parentCategory.CategoryName
+	// }
 	return category, err
 }
 
@@ -500,6 +515,20 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		Campaign: 0,
 		// 実装言語を返す
 		Language: "Go",
+	}
+
+	categoriesbuf = []Category{}
+	categorybufMap = map[int]Category{}
+	categoriesbufMapByParentID = map[int][]Category{}
+	err = dbx.Select(&categoriesbuf, "SELECT * FROM `categories`")
+	if err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		return
+	}
+	for _, v := range categoriesbuf {
+		categorybufMap[v.ID] = v
+		categoriesbufMapByParentID[v.ParentID] = append(categoriesbufMapByParentID[v.ParentID], v)
 	}
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
@@ -617,12 +646,19 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var categoryIDs []int
-	err = dbx.Select(&categoryIDs, "SELECT id FROM `categories` WHERE parent_id=?", rootCategory.ID)
-	if err != nil {
-		log.Print(err)
+	if v, ok := categoriesbufMapByParentID[rootCategory.ID]; ok {
+		categoryIDs = v
+	} else {
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
 		return
 	}
+
+	// err = dbx.Select(&categoryIDs, "SELECT id FROM `categories` WHERE parent_id=?", rootCategory.ID)
+	// if err != nil {
+	// 	log.Print(err)
+	// 	outputErrorMsg(w, http.StatusInternalServerError, "db error")
+	// 	return
+	// }
 
 	query := r.URL.Query()
 	itemIDStr := query.Get("item_id")
@@ -2156,15 +2192,15 @@ func getSettings(w http.ResponseWriter, r *http.Request) {
 
 	ress.PaymentServiceURL = getPaymentServiceURL()
 
-	categories := []Category{}
+	// categories := []Category{}
 
-	err := dbx.Select(&categories, "SELECT * FROM `categories`")
-	if err != nil {
-		log.Print(err)
-		outputErrorMsg(w, http.StatusInternalServerError, "db error")
-		return
-	}
-	ress.Categories = categories
+	// err := dbx.Select(&categories, "SELECT * FROM `categories`")
+	// if err != nil {
+	// 	log.Print(err)
+	// 	outputErrorMsg(w, http.StatusInternalServerError, "db error")
+	// 	return
+	// }
+	ress.Categories = categoriesbuf
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	json.NewEncoder(w).Encode(ress)
