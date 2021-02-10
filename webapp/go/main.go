@@ -802,7 +802,7 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		outputErrorMsg(w, http.StatusNotFound, "category not found")
 		return
 	}
-	categoryMap := map[int]categories{}
+	categoryMap := map[int]Category{}
 	for _, v := range sellers {
 		categoryMap[v.ID] = v
 	}
