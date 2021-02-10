@@ -87,9 +87,9 @@ type User struct {
 }
 
 type UserSimple struct {
-	ID           int64  `json:"id"`
-	AccountName  string `json:"account_name"`
-	NumSellItems int    `json:"num_sell_items"`
+	ID           int64  `json:"id" db:"id"`
+	AccountName  string `json:"account_name" db:"account_name"`
+	NumSellItems int    `json:"num_sell_items" db:"num_sell_items"`
 }
 
 type Item struct {
@@ -415,6 +415,17 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 	return userSimple, err
 }
 
+func getuserSimplesByIDs(q sqlx.Queryer, userIDs []int64) (userSimples []UserSimple, err error) {
+	sql := "SELECT * FROM `users` WHERE `id` IN (?)"
+	if sql, params, err := sqlx.In(sql, userIDs); err != nil {
+    	return userSimples, err
+	}
+	if err = sqlx.Select(q, &userSimples, sql, userIDs...); err != nil {
+		return userSimples, err
+	}
+	return userSimples, err
+}
+
 func getCategoryByID(q sqlx.Queryer, categoryID int) (category Category, err error) {
 	if v, ok := categorybufMap[categoryID]; ok {
 		category = v
@@ -728,6 +739,8 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	itemSimples := []ItemSimple{}
+	sellerIDs := []int64{}
+	// categoryIDs := []int64{}
 	for _, item := range items {
 		seller, err := getUserSimpleByID(dbx, item.SellerID)
 		if err != nil {
@@ -751,7 +764,10 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 			Category:   &category,
 			CreatedAt:  item.CreatedAt.Unix(),
 		})
+		sellerIDs = append(sellerIDs, item.SellerID)
+		// categoryIDs = append(categoryIDs, item.CategoryID)
 	}
+	getuserSimplesByIDs(dbx, sellerIDs)
 
 	hasNext := false
 	if len(itemSimples) > ItemsPerPage {
