@@ -417,7 +417,8 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 
 func getuserSimplesByIDs(q sqlx.Queryer, userIDs []int64) (userSimples []UserSimple, err error) {
 	sql := "SELECT * FROM `users` WHERE `id` IN (?)"
-	if sql, params, err := sqlx.In(sql, userIDs); err != nil {
+	sql, params, err := sqlx.In(sql, userIDs)
+	if err != nil {
     	return userSimples, err
 	}
 	if err = sqlx.Select(q, &userSimples, sql, params...); err != nil {
