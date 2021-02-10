@@ -458,7 +458,7 @@ func getCategoriesByIDs(q sqlx.Queryer, categoryIDs []int) (categories []Categor
 			if category.ParentID != 0 {
 				parentCategory, err := getCategoryByID(q, category.ParentID)
 				if err != nil {
-					return category, err
+					return categories, err
 				}
 				category.ParentCategoryName = parentCategory.CategoryName
 			}
@@ -759,7 +759,7 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 
 	itemSimples := []ItemSimple{}
 	sellerIDs := []int64{}
-	categoryIDs := []int64{}
+	categoryIDs := []int{}
 	for _, item := range items {
 		seller, err := getUserSimpleByID(dbx, item.SellerID)
 		if err != nil {
