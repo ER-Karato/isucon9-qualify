@@ -789,7 +789,8 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 
 	sellers, err := getuserSimplesByIDs(dbx, itemSellerIDs)
 	if err != nil {
-		outputErrorMsg(w, http.StatusNotFound, err)
+		log.Println(err)
+		outputErrorMsg(w, http.StatusNotFound, "seller not found")
 		return
 	}
 	userSimpleMap := map[int64]UserSimple{}
@@ -799,7 +800,8 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 
 	categories, err := getCategoriesByIDs(dbx, itemCategoryIDs)
 	if err != nil {
-		outputErrorMsg(w, http.StatusNotFound, err)
+		log.Println(err)
+		outputErrorMsg(w, http.StatusNotFound, "category not found")
 		return
 	}
 	categoryMap := map[int]Category{}
