@@ -416,12 +416,13 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 }
 
 func getuserSimplesByIDs(q sqlx.Queryer, userIDs []int64) (userSimples []UserSimple, err error) {
-	sql := "SELECT * FROM `users` WHERE `id` IN (?)"
+	sql := "SELECT id, account_name, num_sell_items FROM `users` WHERE `id` IN (?)"
 	sql, params, err := sqlx.In(sql, userIDs)
 	if err != nil {
     	return userSimples, err
 	}
 	if err = sqlx.Select(q, &userSimples, sql, params...); err != nil {
+		log.Println(err)
 		return userSimples, err
 	}
 	return userSimples, err
@@ -789,7 +790,6 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 
 	sellers, err := getuserSimplesByIDs(dbx, itemSellerIDs)
 	if err != nil {
-		log.Println(err)
 		outputErrorMsg(w, http.StatusNotFound, "seller not found")
 		return
 	}
@@ -800,7 +800,6 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 
 	categories, err := getCategoriesByIDs(dbx, itemCategoryIDs)
 	if err != nil {
-		log.Println(err)
 		outputErrorMsg(w, http.StatusNotFound, "category not found")
 		return
 	}
