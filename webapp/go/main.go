@@ -420,7 +420,7 @@ func getuserSimplesByIDs(q sqlx.Queryer, userIDs []int64) (userSimples []UserSim
 	if sql, params, err := sqlx.In(sql, userIDs); err != nil {
     	return userSimples, err
 	}
-	if err = sqlx.Select(q, &userSimples, sql, userIDs...); err != nil {
+	if err = sqlx.Select(q, &userSimples, sql, params...); err != nil {
 		return userSimples, err
 	}
 	return userSimples, err
