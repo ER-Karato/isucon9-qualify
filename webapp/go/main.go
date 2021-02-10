@@ -758,8 +758,8 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	itemSimples := []ItemSimple{}
-	sellerIDs := []int64{}
-	categoryIDs := []int{}
+	itemSellerIDs := []int64{}
+	itemCategoryIDs := []int{}
 	for _, item := range items {
 		seller, err := getUserSimpleByID(dbx, item.SellerID)
 		if err != nil {
@@ -783,11 +783,11 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 			Category:   &category,
 			CreatedAt:  item.CreatedAt.Unix(),
 		})
-		sellerIDs = append(sellerIDs, item.SellerID)
-		categoryIDs = append(categoryIDs, item.CategoryID)
+		itemSellerIDs = append(itemSellerIDs, item.SellerID)
+		itemCategoryIDs = append(itemCategoryIDs, item.CategoryID)
 	}
-	getuserSimplesByIDs(dbx, sellerIDs)
-	getCategoriesByIDs(dbx, categoryIDs)
+	getuserSimplesByIDs(dbx, itemSellerIDs)
+	getCategoriesByIDs(dbx, itemCategoryIDs)
 
 	hasNext := false
 	if len(itemSimples) > ItemsPerPage {
