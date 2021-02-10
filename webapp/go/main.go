@@ -422,7 +422,6 @@ func getuserSimplesByIDs(q sqlx.Queryer, userIDs []int64) (userSimples []UserSim
     	return userSimples, err
 	}
 	if err = sqlx.Select(q, &userSimples, sql, params...); err != nil {
-		log.Println(err)
 		return userSimples, err
 	}
 	return userSimples, err
@@ -762,28 +761,28 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 	itemSellerIDs := []int64{}
 	itemCategoryIDs := []int{}
 	for _, item := range items {
-		seller, err := getUserSimpleByID(dbx, item.SellerID)
-		if err != nil {
-			outputErrorMsg(w, http.StatusNotFound, "seller not found")
-			return
-		}
-		category, err := getCategoryByID(dbx, item.CategoryID)
-		if err != nil {
-			outputErrorMsg(w, http.StatusNotFound, "category not found")
-			return
-		}
-		itemSimples = append(itemSimples, ItemSimple{
-			ID:         item.ID,
-			SellerID:   item.SellerID,
-			Seller:     &seller,
-			Status:     item.Status,
-			Name:       item.Name,
-			Price:      item.Price,
-			ImageURL:   getImageURL(item.ImageName),
-			CategoryID: item.CategoryID,
-			Category:   &category,
-			CreatedAt:  item.CreatedAt.Unix(),
-		})
+		// seller, err := getUserSimpleByID(dbx, item.SellerID)
+		// if err != nil {
+		// 	outputErrorMsg(w, http.StatusNotFound, "seller not found")
+		// 	return
+		// }
+		// category, err := getCategoryByID(dbx, item.CategoryID)
+		// if err != nil {
+		// 	outputErrorMsg(w, http.StatusNotFound, "category not found")
+		// 	return
+		// }
+		// itemSimples = append(itemSimples, ItemSimple{
+		// 	ID:         item.ID,
+		// 	SellerID:   item.SellerID,
+		// 	Seller:     &seller,
+		// 	Status:     item.Status,
+		// 	Name:       item.Name,
+		// 	Price:      item.Price,
+		// 	ImageURL:   getImageURL(item.ImageName),
+		// 	CategoryID: item.CategoryID,
+		// 	Category:   &category,
+		// 	CreatedAt:  item.CreatedAt.Unix(),
+		// })
 		itemSellerIDs = append(itemSellerIDs, item.SellerID)
 		itemCategoryIDs = append(itemCategoryIDs, item.CategoryID)
 	}
@@ -797,7 +796,6 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 	for _, v := range sellers {
 		userSimpleMap[v.ID] = v
 	}
-
 	categories, err := getCategoriesByIDs(dbx, itemCategoryIDs)
 	if err != nil {
 		outputErrorMsg(w, http.StatusNotFound, "category not found")
@@ -808,6 +806,20 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		categoryMap[v.ID] = v
 	}
 
+	for _, item := range items {
+		itemSimples = append(itemSimples, ItemSimple{
+			ID:         item.ID,
+			SellerID:   item.SellerID,
+			Seller:     &userSimpleMap[item.SellerID],
+			Status:     item.Status,
+			Name:       item.Name,
+			Price:      item.Price,
+			ImageURL:   getImageURL(item.ImageName),
+			CategoryID: item.CategoryID,
+			Category:   &categoryMap[item.CategoryID],
+			CreatedAt:  item.CreatedAt.Unix(),
+		})
+	}
 
 	hasNext := false
 	if len(itemSimples) > ItemsPerPage {
