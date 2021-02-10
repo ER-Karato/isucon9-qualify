@@ -450,6 +450,24 @@ func getCategoryByID(q sqlx.Queryer, categoryID int) (category Category, err err
 	return category, err
 }
 
+func getCategoriesByIDs(q sqlx.Queryer, categoryIDs []int) (categories []Category, err error) {
+	for _, categoryID := range categoryIDs {
+		category := Category{}
+		if v, ok := categorybufMap[categoryID]; ok {
+			category = v
+			if category.ParentID != 0 {
+				parentCategory, err := getCategoryByID(q, category.ParentID)
+				if err != nil {
+					return category, err
+				}
+				category.ParentCategoryName = parentCategory.CategoryName
+			}
+		}
+		categories = append(categories,category)
+	}
+	return categories, err
+}
+
 func getConfigByName(name string) (string, error) {
 	config := Config{}
 	err := dbx.Get(&config, "SELECT * FROM `configs` WHERE `name` = ?", name)
@@ -741,7 +759,7 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 
 	itemSimples := []ItemSimple{}
 	sellerIDs := []int64{}
-	// categoryIDs := []int64{}
+	categoryIDs := []int64{}
 	for _, item := range items {
 		seller, err := getUserSimpleByID(dbx, item.SellerID)
 		if err != nil {
@@ -766,9 +784,10 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 			CreatedAt:  item.CreatedAt.Unix(),
 		})
 		sellerIDs = append(sellerIDs, item.SellerID)
-		// categoryIDs = append(categoryIDs, item.CategoryID)
+		categoryIDs = append(categoryIDs, item.CategoryID)
 	}
 	getuserSimplesByIDs(dbx, sellerIDs)
+	getCategoriesByIDs(dbx, categoryIDs)
 
 	hasNext := false
 	if len(itemSimples) > ItemsPerPage {
