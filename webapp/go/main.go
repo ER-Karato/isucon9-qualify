@@ -793,8 +793,8 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	userSimpleMap := map[int64]*UserSimple{}
-	for _, v := range sellers {
-		userSimpleMap[v.ID] = &v
+	for i, _ := range sellers {
+		userSimpleMap[v.ID] = &sellers[i]
 	}
 	categories, err := getCategoriesByIDs(dbx, itemCategoryIDs)
 	if err != nil {
@@ -802,8 +802,8 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	categoryMap := map[int]*Category{}
-	for _, v := range categories {
-		categoryMap[v.ID] = &v
+	for i, _ := range categories {
+		categoryMap[v.ID] = &categories[i]
 	}
 
 	for _, item := range items {
