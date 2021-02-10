@@ -810,13 +810,13 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		itemSimples = append(itemSimples, ItemSimple{
 			ID:         item.ID,
 			SellerID:   item.SellerID,
-			Seller:     &userSimpleMap[item.SellerID],
+			Seller:     userSimpleMap[item.SellerID],
 			Status:     item.Status,
 			Name:       item.Name,
 			Price:      item.Price,
 			ImageURL:   getImageURL(item.ImageName),
 			CategoryID: item.CategoryID,
-			Category:   &categoryMap[item.CategoryID],
+			Category:   categoryMap[item.CategoryID],
 			CreatedAt:  item.CreatedAt.Unix(),
 		})
 	}
