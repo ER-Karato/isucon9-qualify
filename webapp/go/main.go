@@ -509,9 +509,6 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func getTransactionEvidencesByIDs(q sqlx.Queryer, itemIDs []int64) (transactionEvidences []TransactionEvidence, err error) {
-	if len(itemIDs) <= 0{
-		return transactionEvidences, err
-	}
 	sql := "SELECT * FROM `transaction_evidences` WHERE `item_id` IN (?)"
 	sql, params, err := sqlx.In(sql, itemIDs)
 	if err != nil {
@@ -524,9 +521,6 @@ func getTransactionEvidencesByIDs(q sqlx.Queryer, itemIDs []int64) (transactionE
 }
 
 func getShippingsByIDs(q sqlx.Queryer, transactionEvidenceIDs []int64) (shippings []Shipping, err error) {
-	if len(transactionEvidenceIDs) <= 0{
-		return shippings, err
-	}
 	sql := "SELECT * FROM `shippings` WHERE `transaction_evidence_id` IN (?)"
 	sql, params, err := sqlx.In(sql, transactionEvidenceIDs)
 	if err != nil {
@@ -1176,15 +1170,17 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 		transactionEvidenceMap[v.ID] = v
 	}
 
-	shippings, err := getShippingsByIDs(tx,transactionEvidenceIDs)
-	if err != nil {
-		log.Println(err)
-		outputErrorMsg(w, http.StatusNotFound, "shippings not found")
-		return
-	}
 	shippingMap := map[int64]Shipping{}
-	for _, v := range shippings {
-		shippingMap[v.TransactionEvidenceID] = v
+	if len(transactionEvidenceIDs) > 0{
+		shippings, err := getShippingsByIDs(tx,transactionEvidenceIDs)
+		if err != nil {
+			log.Println(err)
+			outputErrorMsg(w, http.StatusNotFound, "shippings not found")
+			return
+		}
+		for _, v := range shippings {
+			shippingMap[v.TransactionEvidenceID] = v
+		}
 	}
 
 	// for _, item := range items {
