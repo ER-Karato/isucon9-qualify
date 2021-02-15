@@ -1230,13 +1230,8 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 	// 	}
 
 		transactionEvidence := TransactionEvidence{}
-		err = tx.Get(&transactionEvidence, "SELECT * FROM `transaction_evidences` WHERE `item_id` = ?", item.ID)
-		if err != nil && err != sql.ErrNoRows {
-			// It's able to ignore ErrNoRows
-			log.Print(err)
-			outputErrorMsg(w, http.StatusInternalServerError, "db error")
-			tx.Rollback()
-			return
+		if t, ok :=  transactionEvidenceMap[item.ID]; ok {
+			transactionEvidence = t
 		}
 
 		if transactionEvidence.ID > 0 {
