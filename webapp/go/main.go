@@ -1055,6 +1055,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 	if createdAtStr != "" {
 		createdAt, err = strconv.ParseInt(createdAtStr, 10, 64)
 		if err != nil || createdAt <= 0 {
+			log.Println(err)
 			outputErrorMsg(w, http.StatusBadRequest, "created_at param error")
 			return
 		}
@@ -1123,6 +1124,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 
 	sellers, err := getuserSimplesByIDs(tx, itemSellerIDs)
 	if err != nil {
+		log.Println(err)
 		outputErrorMsg(w, http.StatusNotFound, "seller not found")
 		return
 	}
@@ -1135,6 +1137,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 	if len(itemBuyerIDs) > 0 {
 		buyers, err := getuserSimplesByIDs(tx, itemBuyerIDs)
 		if err != nil {
+			log.Println(err)
 			outputErrorMsg(w, http.StatusNotFound, "buyer not found")
 			return
 		}
@@ -1145,6 +1148,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 	
 	categories, err := getCategoriesByIDs(tx, itemCategoryIDs)
 	if err != nil {
+		log.Println(err)
 		outputErrorMsg(w, http.StatusNotFound, "category not found")
 		return
 	}
@@ -1155,6 +1159,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 
 	transactionEvidences, err :=getTransactionEvidencesByIDs(tx, itemIDs)
 	if err != nil {
+		log.Println(err)
 		outputErrorMsg(w, http.StatusNotFound, "transactionEvidence not found")
 		return
 	}
@@ -1167,6 +1172,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 
 	shippings, err := getShippingsByIDs(tx,transactionEvidenceIDs)
 	if err != nil {
+		log.Println(err)
 		outputErrorMsg(w, http.StatusNotFound, "shippings not found")
 		return
 	}
@@ -1215,7 +1221,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 				itemDetail.TransactionEvidenceStatus = t.Status
 				itemDetail.ShippingStatus = ssr.Status
 			} else {
-				outputErrorMsg(w, http.StatusNotFound, "shipping not found")
+				outputErrorMsg(w, http.StatusNotFound, "shippingMap not found")
 				tx.Rollback()
 				return
 			}
