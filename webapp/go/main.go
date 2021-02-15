@@ -71,6 +71,8 @@ var (
 	categoriesbuf []Category
 	categorybufMap map[int]Category
 	categoriesbufMapByParentID map[int][]Category
+
+	userPassbufMap map[int64]string
 )
 
 type Config struct {
@@ -577,6 +579,8 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		categorybufMap[v.ID] = v
 		categoriesbufMapByParentID[v.ParentID] = append(categoriesbufMapByParentID[v.ParentID], v)
 	}
+
+	userPassbufMap = map[int64]string{}
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	json.NewEncoder(w).Encode(res)
@@ -2475,16 +2479,25 @@ func postLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword(u.HashedPassword, []byte(password))
-	if err == bcrypt.ErrMismatchedHashAndPassword {
-		outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
-		return
-	}
-	if err != nil {
-		log.Print(err)
+	if v, ok := userPassbufMap[u.ID]; ok {
+		if v == password {
+			outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
+			return
+		}
+	} else {
+		err = bcrypt.CompareHashAndPassword(u.HashedPassword, []byte(password))
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
+			return
+		}
+		if err != nil {
+			log.Print(err)
+	
+			outputErrorMsg(w, http.StatusInternalServerError, "crypt error")
+			return
+		}
 
-		outputErrorMsg(w, http.StatusInternalServerError, "crypt error")
-		return
+		userPassbufMap[u.ID] = password
 	}
 
 	session := getSession(r)
