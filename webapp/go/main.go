@@ -1062,10 +1062,12 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 
 	itemDetails := []ItemDetail{}
 
+	itemIDs := []int64{}
 	itemSellerIDs := []int64{}
 	itemBuyerIDs := []int64{}
 	itemCategoryIDs := []int{}
 	for _, item := range items {
+		itemIDs = append(itemIDs, item.ID)
 		itemSellerIDs = append(itemSellerIDs, item.SellerID)
 		if item.BuyerID != 0 {
 			itemBuyerIDs = append(itemBuyerIDs, item.BuyerID)
@@ -1125,9 +1127,10 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 			Category:  categoryMap[item.CategoryID],
 			CreatedAt: item.CreatedAt.Unix(),
 		}
+
 		if item.BuyerID != 0 {
 			itemDetail.BuyerID = item.BuyerID
-			itemDetail.Buyer = buyerSimpleMap[item.BuyerID],
+			itemDetail.Buyer = buyerSimpleMap[item.BuyerID]
 		}
 
 		transactionEvidence := TransactionEvidence{}
@@ -1272,7 +1275,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	json.NewEncoder(w).Encode(rts)
-
+	
 }
 
 func getItem(w http.ResponseWriter, r *http.Request) {
