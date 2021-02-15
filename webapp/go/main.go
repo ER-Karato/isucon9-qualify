@@ -66,6 +66,8 @@ var (
 	dbx       *sqlx.DB
 	store     sessions.Store
 
+	configbuf []Config
+	configbufMap map[string]Config
 	categoriesbuf []Category
 	categorybufMap map[int]Category
 	categoriesbufMapByParentID map[int][]Category
@@ -469,16 +471,19 @@ func getCategoriesByIDs(q sqlx.Queryer, categoryIDs []int) (categories []Categor
 }
 
 func getConfigByName(name string) (string, error) {
-	config := Config{}
-	err := dbx.Get(&config, "SELECT * FROM `configs` WHERE `name` = ?", name)
-	if err == sql.ErrNoRows {
-		return "", nil
+	// config := Config{}
+	// err := dbx.Get(&config, "SELECT * FROM `configs` WHERE `name` = ?", name)
+	// if err == sql.ErrNoRows {
+	// 	return "", nil
+	// }
+	// if err != nil {
+	// 	log.Print(err)
+	// 	return "", err
+	// }
+	if v, ok := configbufMap[name]; ok {
+		return v.Val, err
 	}
-	if err != nil {
-		log.Print(err)
-		return "", err
-	}
-	return config.Val, err
+	return "", err
 }
 
 func getPaymentServiceURL() string {
@@ -545,6 +550,18 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		Campaign: 0,
 		// 実装言語を返す
 		Language: "Go",
+	}
+
+	configbuf = []Config{}
+	configbufMap = map[string]Config{}
+	err = dbx.Select(&configbuf, "SELECT * FROM `configs`")
+	if err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		return
+	}
+	for _, v := range configbuf {
+		configbufMap[v.Name] = v
 	}
 
 	categoriesbuf = []Category{}
@@ -1275,7 +1292,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	json.NewEncoder(w).Encode(rts)
-	
+
 }
 
 func getItem(w http.ResponseWriter, r *http.Request) {
