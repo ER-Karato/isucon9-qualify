@@ -621,27 +621,65 @@ func getNewItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	itemSimples := []ItemSimple{}
+	itemSellerIDs := []int64{}
+	itemCategoryIDs := []int{}
 	for _, item := range items {
-		seller, err := getUserSimpleByID(dbx, item.SellerID)
-		if err != nil {
-			outputErrorMsg(w, http.StatusNotFound, "seller not found")
-			return
-		}
-		category, err := getCategoryByID(dbx, item.CategoryID)
-		if err != nil {
-			outputErrorMsg(w, http.StatusNotFound, "category not found")
-			return
-		}
+		// seller, err := getUserSimpleByID(dbx, item.SellerID)
+		// if err != nil {
+		// 	outputErrorMsg(w, http.StatusNotFound, "seller not found")
+		// 	return
+		// }
+		// category, err := getCategoryByID(dbx, item.CategoryID)
+		// if err != nil {
+		// 	outputErrorMsg(w, http.StatusNotFound, "category not found")
+		// 	return
+		// }
+		// itemSimples = append(itemSimples, ItemSimple{
+		// 	ID:         item.ID,
+		// 	SellerID:   item.SellerID,
+		// 	Seller:     &seller,
+		// 	Status:     item.Status,
+		// 	Name:       item.Name,
+		// 	Price:      item.Price,
+		// 	ImageURL:   getImageURL(item.ImageName),
+		// 	CategoryID: item.CategoryID,
+		// 	Category:   &category,
+		// 	CreatedAt:  item.CreatedAt.Unix(),
+		// })
+		itemSellerIDs = append(itemSellerIDs, item.SellerID)
+		itemCategoryIDs = append(itemCategoryIDs, item.CategoryID)
+	}
+
+	sellers, err := getuserSimplesByIDs(dbx, itemSellerIDs)
+	if err != nil {
+		outputErrorMsg(w, http.StatusNotFound, "seller not found")
+		return
+	}
+	userSimpleMap := map[int64]*UserSimple{}
+	for i, v := range sellers {
+		userSimpleMap[v.ID] = &sellers[i]
+	}
+	categories, err := getCategoriesByIDs(dbx, itemCategoryIDs)
+	if err != nil {
+		outputErrorMsg(w, http.StatusNotFound, "category not found")
+		return
+	}
+	categoryMap := map[int]*Category{}
+	for i, v := range categories {
+		categoryMap[v.ID] = &categories[i]
+	}
+
+	for _, item := range items {
 		itemSimples = append(itemSimples, ItemSimple{
 			ID:         item.ID,
 			SellerID:   item.SellerID,
-			Seller:     &seller,
+			Seller:     userSimpleMap[item.SellerID],
 			Status:     item.Status,
 			Name:       item.Name,
 			Price:      item.Price,
 			ImageURL:   getImageURL(item.ImageName),
 			CategoryID: item.CategoryID,
-			Category:   &category,
+			Category:   categoryMap[item.CategoryID],
 			CreatedAt:  item.CreatedAt.Unix(),
 		})
 	}
