@@ -481,9 +481,9 @@ func getConfigByName(name string) (string, error) {
 	// 	return "", err
 	// }
 	if v, ok := configbufMap[name]; ok {
-		return v.Val, err
+		return v.Val, nil
 	}
-	return "", err
+	return "", nil
 }
 
 func getPaymentServiceURL() string {
