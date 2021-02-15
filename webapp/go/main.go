@@ -1167,7 +1167,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 	transactionEvidenceMap := map[int64]TransactionEvidence{}
 	for _, v := range transactionEvidences {
 		transactionEvidenceIDs = append(transactionEvidenceIDs, v.ID)
-		transactionEvidenceMap[v.ID] = v
+		transactionEvidenceMap[v.ItemID] = v
 	}
 
 	shippingMap := map[int64]Shipping{}
@@ -1208,59 +1208,25 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 			itemDetail.Buyer = buyerSimpleMap[item.BuyerID]
 		}
 
-	// 	if t, ok :=  transactionEvidenceMap[item.ID]; ok {
-	// 		if s, ok :=  shippingMap[t.ID]; ok {
-	// 			ssr, err := APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
-	// 				ReserveID: s.ReserveID,
-	// 			})
-	// 			if err != nil {
-	// 				log.Print(err)
-	// 				outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
-	// 				tx.Rollback()
-	// 				return
-	// 			}
-	// 			itemDetail.TransactionEvidenceID = t.ID
-	// 			itemDetail.TransactionEvidenceStatus = t.Status
-	// 			itemDetail.ShippingStatus = ssr.Status
-	// 		} else {
-	// 			outputErrorMsg(w, http.StatusNotFound, "shippingMap not found")
-	// 			tx.Rollback()
-	// 			return
-	// 		}
-	// 	}
-
-		transactionEvidence := TransactionEvidence{}
 		if t, ok :=  transactionEvidenceMap[item.ID]; ok {
-			transactionEvidence = t
-		}
-
-		if transactionEvidence.ID > 0 {
-			shipping := Shipping{}
-			err = tx.Get(&shipping, "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = ?", transactionEvidence.ID)
-			if err == sql.ErrNoRows {
-				outputErrorMsg(w, http.StatusNotFound, "shipping not found")
+			if s, ok :=  shippingMap[t.ID]; ok {
+				ssr, err := APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
+					ReserveID: s.ReserveID,
+				})
+				if err != nil {
+					log.Print(err)
+					outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
+					tx.Rollback()
+					return
+				}
+				itemDetail.TransactionEvidenceID = t.ID
+				itemDetail.TransactionEvidenceStatus = t.Status
+				itemDetail.ShippingStatus = ssr.Status
+			} else {
+				outputErrorMsg(w, http.StatusNotFound, "shippingMap not found")
 				tx.Rollback()
 				return
 			}
-			if err != nil {
-				log.Print(err)
-				outputErrorMsg(w, http.StatusInternalServerError, "db error")
-				tx.Rollback()
-				return
-			}
-			ssr, err := APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
-				ReserveID: shipping.ReserveID,
-			})
-			if err != nil {
-				log.Print(err)
-				outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
-				tx.Rollback()
-				return
-			}
-
-			itemDetail.TransactionEvidenceID = transactionEvidence.ID
-			itemDetail.TransactionEvidenceStatus = transactionEvidence.Status
-			itemDetail.ShippingStatus = ssr.Status
 		}
 		itemDetails = append(itemDetails, itemDetail)
 	}
