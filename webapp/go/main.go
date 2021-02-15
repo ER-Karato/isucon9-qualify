@@ -508,6 +508,30 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 	templates.ExecuteTemplate(w, "index.html", struct{}{})
 }
 
+func getTransactionEvidencesByIDs(q sqlx.Queryer, itemIDs []int64) (transactionEvidences []TransactionEvidence, err error) {
+	sql := "SELECT * FROM `transaction_evidences` WHERE `item_id` IN (?)"
+	sql, params, err := sqlx.In(sql, itemIDs)
+	if err != nil {
+    	return transactionEvidences, err
+	}
+	if err = sqlx.Select(q, &transactionEvidences, sql, params...); err != nil {
+		return transactionEvidences, err
+	}
+	return transactionEvidences, err
+}
+
+func getShippingsByIDs(q sqlx.Queryer, transactionEvidenceIDs []int64) (shippings []Shipping, err error) {
+	sql := "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = IN (?)"
+	sql, params, err := sqlx.In(sql, transactionEvidenceIDs)
+	if err != nil {
+    	return shippings, err
+	}
+	if err = sqlx.Select(q, &shippings, sql, params...); err != nil {
+		return shippings, err
+	}
+	return shippings, err
+}
+
 func postInitialize(w http.ResponseWriter, r *http.Request) {
 	ri := reqInitialize{}
 
@@ -1127,6 +1151,29 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 	categoryMap := map[int]*Category{}
 	for i, v := range categories {
 		categoryMap[v.ID] = &categories[i]
+	}
+
+	transactionEvidences, err :=getTransactionEvidencesByIDs(tx, itemIDs)
+	if err != nil {
+		outputErrorMsg(w, http.StatusNotFound, "transactionEvidence not found")
+		return
+	}
+	transactionEvidenceIDs := []int64{}
+	transactionEvidenceMap := map[int64]TransactionEvidence{}
+	for _, v := range transactionEvidences {
+		transactionEvidenceIDs = append(transactionEvidenceIDs, v.ID)
+		transactionEvidenceMap[v.ID] = v
+	}
+
+	shippings, err := getShippingsByIDs(tx,transactionEvidenceIDs)
+	if err != nil {
+		outputErrorMsg(w, http.StatusNotFound, "transactionEvidence not found")
+		return
+	}
+	shippingMap := map[int64]Shipping{}
+	for _, v := range shippings {
+		t := transactionEvidenceMap[v.TransactionEvidenceID]
+		shippingMap[t.ItemID] = v
 	}
 
 	for _, item := range items {
