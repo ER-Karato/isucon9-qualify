@@ -2480,7 +2480,7 @@ func postLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, ok := userPassbufMap[u.ID]; ok {
-		if v == password {
+		if v != password {
 			outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
 			return
 		}
