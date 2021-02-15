@@ -521,7 +521,7 @@ func getTransactionEvidencesByIDs(q sqlx.Queryer, itemIDs []int64) (transactionE
 }
 
 func getShippingsByIDs(q sqlx.Queryer, transactionEvidenceIDs []int64) (shippings []Shipping, err error) {
-	sql := "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = IN (?)"
+	sql := "SELECT * FROM `shippings` WHERE `transaction_evidence_id` IN (?)"
 	sql, params, err := sqlx.In(sql, transactionEvidenceIDs)
 	if err != nil {
     	return shippings, err
@@ -577,7 +577,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		// 実装言語を返す
 		Language: "Go",
 	}
-
+	
 	configbuf = []Config{}
 	configbufMap = map[string]Config{}
 	err = dbx.Select(&configbuf, "SELECT * FROM `configs`")
@@ -604,7 +604,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		categoriesbufMapByParentID[v.ParentID] = append(categoriesbufMapByParentID[v.ParentID], v)
 	}
 
-	userPassbufMap = map[int64]string{}
+	userPassbufMap = make(map[int64]string)
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	json.NewEncoder(w).Encode(res)
@@ -1167,7 +1167,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 
 	shippings, err := getShippingsByIDs(tx,transactionEvidenceIDs)
 	if err != nil {
-		outputErrorMsg(w, http.StatusNotFound, "transactionEvidence not found")
+		outputErrorMsg(w, http.StatusNotFound, "shippings not found")
 		return
 	}
 	shippingMap := map[int64]Shipping{}
@@ -1201,8 +1201,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if t, ok :=  transactionEvidenceMap[item.ID]; ok {
-			
-			if s, ok :=  shippingMap[item.ID]; ok { 
+			if s, ok :=  shippingMap[t.ID]; ok {
 				ssr, err := APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
 					ReserveID: s.ReserveID,
 				})
